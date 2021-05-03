@@ -9,9 +9,7 @@ void IotaInputChannel::reset(){
 	_burden = 0;
     _calibration = 0;
     _phase = 0;
-    delete[] _p50;
     _p50 = nullptr;
-    delete[] _p60;
     _p60 = nullptr;
 	_active = false;
     _reversed = false;
@@ -21,10 +19,12 @@ void IotaInputChannel::reset(){
 }
 
 void IotaInputChannel::ageBuckets(uint32_t timeNow) {
-    double elapsedHrs = double((uint32_t)(timeNow - dataBucket.timeThen)) / 3600000E0;
-    dataBucket.accum1 += dataBucket.value1 * elapsedHrs;
-    dataBucket.accum2 += dataBucket.value2 * elapsedHrs;
-    dataBucket.timeThen = timeNow;    
+    if(timeNow > dataBucket.timeThen){
+        double elapsedHrs = double((uint32_t)(timeNow - dataBucket.timeThen)) / 3600000E0;
+        dataBucket.accum1 += dataBucket.value1 * elapsedHrs;
+        dataBucket.accum2 += dataBucket.value2 * elapsedHrs;
+        dataBucket.timeThen = timeNow;
+    }    
 }
 
 void IotaInputChannel::setVoltage(float volts, float Hz){

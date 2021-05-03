@@ -38,7 +38,7 @@ that new name will be the password required in this step.
 
 After connecting, a page will be rendered with several choices.  Select ``Configure WiFi``.
 
-.. image:: pics/CaptivePortal.jpg
+.. image:: pics/connectWiFi/CaptivePortal.jpg
     :scale: 50 %
     :align: center
     :alt: captive portal image
@@ -47,7 +47,11 @@ A few seconds may elapse while the IoTaWatt scans for the local networks,
 then another page will be rendered allowing you to select one of the listed
 networks, or specify another network not listed.
 
-.. image:: pics/SSIDpwd.jpg
+Note that the IotaWatt only supports 2.4 GHz wireless networks. If you have a 5 GHz
+only network you can either enable 2.4 GHz on it, or create a separate (optionally hidden)
+network on 2.4 GHz for the IotaWatt to use.
+
+.. image:: pics/connectWiFi/SSIDpwd.jpg
     :scale: 50 %
     :align: center
     :alt: Specify Network image
@@ -64,14 +68,20 @@ When the LED glows dull green, proceed to the next step
 Resetting WiFi to Defaults
 --------------------------
 
-If you wish to change the WiFi SSID that the IoTaWatt is connected to (you might have done some testing in the lab and want to deploy 'live' somewhere where the SSID is different) BEFORE moving the device you need to reset the WiFi.
+If you wish to change the WiFi SSID that the IoTaWatt is connected to
+(you might have done some testing and want to deploy 'live' somewhere where the SSID is different)
+BEFORE moving the device you should reset the WiFi.
 
-In the URL bar of your browser type:
+Using the configuration app go to ``Tools->WiFi``
 
- > ``IoTaWatt.local/command?disconnect=yes``
+.. image:: pics/connectWiFi/disconnectWiFi.png
+    :scale: 100 %
+    :align: center
+    :alt: Disconnect WiFi image
 
-You could replace IoTaWatt.local with the IP address of your device.
+After the command to disconnect the existing WiFi connection has been sent, 
+IoTaWatt will respond "ok" and the LED will change from a dull green to a dull red as the IoTaWatt disconnects,
+indicating that the WiFi link has been severed.
 
-After the command to disconnect the existing WiFi connection has been sent, IoTaWatt will respond "ok" and the LED will change from a dull green to a dull red as the IoTaWatt disconnects, indicating that the WiFi link has been severed.
-
-Then power cycle the IoTaWatt. It should restart with the RED-GREEN-GREEN led sequence like a new IoTaWatt ready to connect to the new SSID
+Then power cycle the IoTaWatt. It should restart with the RED-GREEN-GREEN led sequence like a new
+IoTaWatt ready to connect to the new SSID

@@ -1,21 +1,23 @@
 {
 "VT":[
-  {"model":"generic120V","type":"U","cal":11.50,"phase":2.0},
-  {"model":"generic240V","type":"U","cal":20.00,"phase":2.0},  
-  {"model":"DCSS AC910(Aus)","mfg":"Radio Parts","cal":20.72,"p50":[2.17]},
-  {"model":"Powertech MP-3027(Aus)","mfg":"jaycar","cal":23.18,"p50":[0.92]},
-  {"model":"Ideal 77DB-06-09(UK)","cal":20.01,"p50":[1.05]},
-  {"model":"Ideal 77DE-06-09(EU)","cal":19.12,"p50":[1.48]},
-  {"model":"Ideal 77DA-10-09-MI(USA)","cal":11.06,"p60":[0.10]},
-  {"model":"TDC DA-10-09","cal":11.20,"p60":[1.14]},
-  {"model":"TDC DA-10-09-E6","cal":10.79,"p60":[0.07]},
-  {"model":"TDC DE-10-09(EU)","cal":18.66,"p50":[0.16]},
-  {"model":"Jameco/100061","cal":11.68,"p60":[3.00]}, 
-  {"model":"Jameco/102234","cal":11.43,"p60":[1.80]}, 
-  {"model":"Jameco/2227444","cal":11.51,"p60":[0.58]},
-  {"model":"Jameco/2270815","cal":10.72,"p60":[0.16]},
-  {"model":"CUI 41A-9-1000","cal":10.10,"p60":[0.43]},
-  {"model":"AX-27750-H","cal":20.56,"p60":[0.18]}	
+	{"model":"TDC DA-10-09-E6","cal":10.79,"phase":0.07,"p60":[0.07]},
+	{"model":"Jameco/2270815","cal":10.72,"phase":0.16,"p60":[0.16]},
+  	{"model":"JW-95001-NA","mfg":"Global Village","cal":11.17,"phase":0.74,"p60":[0.74]},
+	{"model":"M9233","mfg":"PowerTran","cal":21.62,"phase":1.81,"p50":[1.81]},
+  	{"model":"DCSS AC910(Aus)","mfg":"Radio Parts","cal":20.72,"p50":[2.17]},
+  	{"model":"Powertech MP-3027(Aus)","mfg":"jaycar","cal":23.18,"p50":[0.92]},
+  	{"model":"Ideal 77DB-06-09(UK)","cal":20.01,"p50":[1.05]},
+  	{"model":"Ideal 77DE-06-09(EU)","cal":19.12,"p50":[1.48],"p60":[0.77]},
+  	{"model":"Ideal 77DA-10-09-MI(USA)","cal":11.06,"p60":[0.10]},
+  	{"model":"TDC DE-10-09(EU)","cal":18.66,"p50":[0.16]},
+  	{"model":"Jameco/100061","cal":11.68,"p60":[3.00]}, 
+  	{"model":"Jameco/102234","cal":11.43,"p60":[1.80]}, 
+  	{"model":"Jameco/2227444","cal":11.51,"p60":[0.58]},
+ 	{"model":"CUI 41A-9-1000","cal":10.10,"p60":[0.43]},
+  	{"model":"AX-27750-H","cal":20.56,"p60":[0.18]},
+	{"model":"TDC DA-10-09","cal":11.20,"p60":[1.14]},
+  	{"model":"generic120V","type":"U","cal":11.50,"phase":2.0},
+  	{"model":"generic240V","type":"U","cal":20.00,"phase":2.0} 
   ],
 
 "CT":[
@@ -37,11 +39,18 @@
 	{"model":"ECS16100","mfg":"echun","type":"C","turns":2000,"phase":0.6,"p60":[0.9,7,0.8,30,0.72],"p50":[1.2,6,1.1,19,1.0,50,0.95]},
 	{"model":"ECOL09","mfg":"echun","type":"C","turns":1000,"phase":0.10,"p60":[0.4,20,0.3],"p50":[0.5,20,0.4]},
 	{"model":"ECS1050","mfg":"echun","type":"C","turns":1000,"phase":1.6,"p60":[2.0,1,1.9,2,1.8,3,1.7,6,1.6,12,1.5,21,1.4],"p50":[2.2,3,2.1,4,2.0,8,1.9,13,1.8]},
+	{"model":"AcuCT-H040-50","mfg":"AccuEnergy","type":"C","turns":1000,"phase":1.0,"p60":[1.1,8,1.0,17,0.9],"p50":[1.4,3,1.3,6,1.2,10,1.1,17,1.05,40,1.1]},
+	{"model":"AcuCT-H063-100","mfg":"AccuEnergy","type":"C","turns":2000,"phase":0.6,"p60":[0.7,15,0.6,45,0.55],"p50":[0.8,12,0.7,32,0.6]},
+	{"model":"AcuCT-H100-200","mfg":"AccuEnergy","type":"C","turns":4000,"phase":0.25,"p60":[0.3,30,0.25],"p50":[0.3,50,0.25]},
+	{"model":"AcuCT-H138-400","mfg":"AccuEnergy","type":"C","turns":8000,"phase":0.15,"p60":[0.25,10,0.2,30,0.15],"p50":[0.3,20,0.2,80,0.15,160,0.10]},
+	{"model":"AcuCT-H138-600","mfg":"AccuEnergy","type":"C","turns":12000,"phase":0.1,"p60":[0.1,60,0.05],"p50":[0.15,20,0.1,100,0.05]},
 	{"model":"WC-1","mfg":"Wattcore","type":"C","turns":1000,"phase":1.6},
 	{"model":"HWCT-004","mfg":"unknown","type":"C","turns":1000,"phase":0.1,"p60":[0.4,10,0.3],"p50":[0.6,10,0.5]},
 	{"model":"DL-CT08CL2","mfg":"unknown","type":"C","turns":1000,"phase":0.1,"p60":[0.2,5,0.1],"p50":[0.2,5,0.1,15,0.05]},
+	{"model":"AZ500","mfg":"Talema","type":"C","turns":509,"phase":1.5,"p60":[3.0,1,2.5,2,2.0,5,1.5,12,1.0],"p50":[3.5,2,3.0,3,2.5,5,2.0,10,1.5,20,1.25]},
+	{"model":"AZ1000","mfg":"Talema","type":"C","turns":1005,"phase":0.75,"p60":[1.5,1,1.25,3,1.0,9,0.75,22,0.5],"p50":[1.75,2,1.5,3,1.25,7,1.0,17,0.75,33,0.6]},
 	{"model":"ZDKCT10M","mfg":"unk nown","type":"C","turns":2007,"phase":1.5},
 	{"model":"PZCT-02","mfg":"unknown","type":"C","turns":1000,"phase":2.5},
 	{"model":"SCT0750-000","mfg":"Magnalab","type":"C","turns":7550,"phase":2.55}
-	]
+  ]
 }

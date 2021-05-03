@@ -25,8 +25,8 @@ We're plotting power for the current day
 (midnight to 5:42pm).  Along with that we've plotted the accrued Watt-hours for the day, 
 14.2 kWh as of 5:42.
 
-.. image:: pics/graphPlus/graphPlus.PNG
-    :scale: 40 %
+.. image:: pics/graphPlus/graphPlus.png
+    :scale: 40%
     :align: center
     :alt: Graph+ image
 
@@ -41,7 +41,7 @@ VTs measure Voltage and frequency(Hz), and CTs measure Watts, Watt-hours, Amps, 
 and Power-Factor (PF).  So the first thing is to select the measurement you are interested in.
 At the top are the unit selection buttons. Click on the particular unit you are interested in.
 
-.. image:: pics/graphPlus/powerSource.PNG
+.. image:: pics/graphPlus/powerSource.png
     :scale: 50 %
     :align: right
     :alt: CT sources
@@ -57,7 +57,7 @@ as power channels (CT inputs or CT based outputs). Note that the last entry show
 blue trash-can indicating that particular unit/source has been selected and is 
 currently graphed.
 
-.. image:: pics/graphPlus/voltageSource.PNG
+.. image:: pics/graphPlus/voltageSource.png
     :scale: 50 %
     :align: left
     :alt: VT sources
@@ -94,7 +94,7 @@ Once data has been plotted, the zoom/pan buttons can be used to modify the
 time-frame.  Graphs with relative time-periods ending in the present can be set to 
 automatically refresh.
 
-.. image:: pics/graphPlus/timeSelector.PNG
+.. image:: pics/graphPlus/timeSelector.png
     :scale: 80%
     :align: center
     :alt: Time timeSelector
@@ -106,7 +106,7 @@ This is where you specify an initial time period, and where you go to change it.
 In the upper left is a dropdown selector that is used to specify common relative 
 time periods.
 
-.. image:: pics/graphPlus/periodList.PNG
+.. image:: pics/graphPlus/periodList.png
     :scale: 80%
     :align: center
     :alt: Period list
@@ -134,7 +134,7 @@ the 28-31 days in the past month.  All units are averaged except Wh, which retur
 total used in each grouping.  So in this case, there would be 28-31 data points plotted.
 
 
-.. image:: pics/graphPlus/groupSelect.PNG
+.. image:: pics/graphPlus/groupSelect.png
     :scale: 80%
     :align: center
     :alt: Group Selecting
@@ -162,7 +162,7 @@ This is only one of several ways to manipulate custom dates. There are two other
 ways to modify the dates bounding the current graph.  The most obvious is the 
 zoom/scroll bar.
 
-.. image:: pics/graphPlus/zoomScroll.PNG
+.. image:: pics/graphPlus/zoomScroll.png
     :scale: 100%
     :align: center
     :alt: Zoom/Scroll bar
@@ -180,17 +180,41 @@ There is one last way to modify graph period.  You can simply select a subset of
 the graph window holding down the left mouse button.  When you release it, the 
 highlighted selection will become the new time period.
 
-.. image:: pics/graphPlus/screenSelect.PNG
+.. image:: pics/graphPlus/screenSelect.png
     :scale: 40%
     :align: center
     :alt: Screen Selection
+
+Refresh/Freeze
+..............
+
+The |refreshImage| button will immediately refresh the current plot.
+If the time period of the current plot ends at the current time, 
+as in the "Today", "Last 10 minutes", etc., the display 
+will continue to refresh at the "interval" rate.  
+For example if the auto interval is 2 minutes, it will continually refresh every 2 minutes.
+You will know it is auto refresh mode because the Refresh button will change to
+|freezeImage|. If you click this button the auto refresh will stop and the button will
+revert to the manual |refreshImage| button.
+
+The Refresh/Freeze state is retained when saving and subsequently restoring graphs.
+This feature is useful when loading a saved graph as an embeded window where there are
+no controls, allowing an auto refresh graph can be displayed in a frame.
+
+.. |refreshImage| image:: pics/graphPlus/refreshButton.png
+    :scale: 80%
+    :alt: Refresh Button
+
+.. |freezeImage| image:: pics/graphPlus/freezeButton.png
+    :scale: 80%
+    :alt: Freeze Button
 
 Graph window
 -------------
 
 Once data sources are selected, the graph window comes to life.
 
-.. image:: pics/graphPlus/graphWindow.PNG
+.. image:: pics/graphPlus/graphWindow.png
     :scale: 40%
     :align: center
     :alt: Graph Window
@@ -216,7 +240,7 @@ top row. There are four tables:
 Options Table 
 .............
 
-.. image:: pics/graphPlus/optionsTable.PNG
+.. image:: pics/graphPlus/optionsTable.png
     :scale: 80%
     :align: center
     :alt: Options Table
@@ -269,7 +293,7 @@ an immediate effect on the graph.  There is no Save or Refresh required.
 Statistics Table 
 ................
 
-.. image:: pics/graphPlus/statsTable.PNG
+.. image:: pics/graphPlus/statsTable.png
     :scale: 80%
     :align: center
     :alt: Statistics Table
@@ -307,7 +331,7 @@ This is a list the traces with useful statistics.
 Yaxes Range Table 
 .................
 
-.. image:: pics/graphPlus/yaxesTable.PNG
+.. image:: pics/graphPlus/yaxesTable.png
     :scale: 80%
     :align: center
     :alt: Yaxes Range Table
@@ -336,7 +360,7 @@ Max:
 CSV Data 
 ........
 
-.. image:: pics/graphPlus/csvTable.PNG
+.. image:: pics/graphPlus/csvTable.png
     :scale: 80%
     :align: center
     :alt: CSV Data area
@@ -357,7 +381,10 @@ Null Values:
     * Remove line - Where a line has a null value, remove the entire line from the display.
 
 Copy:
-    This button will copy the entire contents of the CSV table to the clipboard.
+    Copy the contents of the CSV table to the clipboard.
+
+Download:
+    Download the CSV data as a file.
     
 Saving Graphs
 --------------
@@ -370,7 +397,7 @@ At the bottom of the sidebar you can save and reload any number of graphs.
 Each graph is saved in the IoTaWatt, so it doesn't matter if you use a different 
 browser or device to recall them, they will always be there.
 
-.. image:: pics/graphPlus/savedGraphList.PNG
+.. image:: pics/graphPlus/savedGraphList.png
     :scale: 60%
     :align: center
     :alt: Saved Graphs
@@ -380,7 +407,7 @@ The **save** button will appear.  Click it. The graph has been saved. Click the
 *Saved Graphs:* selector and a list of all of the saved graphs will appear.
 Click any selection and Graph+ will load that graph specification.
 
-.. image:: pics/graphPlus/savedMonthlyWh.PNG
+.. image:: pics/graphPlus/savedMonthlyWh.png
     :scale: 40%
     :align: center
     :alt: Saveds Monthly Wh
@@ -400,6 +427,28 @@ save a static graph, select the *custom dates* period at the top before saving.
 Whenever a saved graph name is in the *Graph name:* box, the **Delete** key will be 
 available. To change a graph specification, simply load it, make the changes and save 
 it again.
+
+Running Directly with URL
+-------------------------
+
+Graph+ can be loaded directly from the IoTaWatt's web server using the URL
+
+http://iotawatt.local/graph2.htm [?graph=savedgraph [&embed] ]
+
+Substitute your local hostname/IP address if different.
+
+graph=
+......
+
+Optional query parameter to specify a saved graph that is to be loaded initially.
+
+embed
+......
+
+Causes Graph+ to display only the plot window of the selected graph. 
+If the saved graph has refresh enabled, the plot will refresh at the 
+active interval.
+
 
 Reset
 -----

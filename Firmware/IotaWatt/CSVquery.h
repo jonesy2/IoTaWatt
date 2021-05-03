@@ -49,6 +49,7 @@ class  CSVquery {
 
         uint32_t    _begin;                     // Beginning time - UTC
         uint32_t    _end;                       // Ending time - UTC
+        int32_t     _limit;                     // Output limit in lines, -1 is nolimit  
         uint32_t    _groupMult;                 // Group unit muliplier as in 7d
         tUnits      _groupUnits;                // Basic group time unit
         tformat     _timeFormat;                // Time output format
@@ -57,6 +58,7 @@ class  CSVquery {
         query       _query;                     // Type of query 
         bool        _header;                    // True if header = yes
         bool        _highRes;
+        bool        _integrations;              // Period and Group should work with integrations
         bool        _firstLine;                 // True when no lines have been generated
         bool        _lastLine;                  // True when last line has been generated
         bool        _missingSkip;               // Omit output line when no data
@@ -95,7 +97,6 @@ class  CSVquery {
                     };
 
         column*     _columns;                   // List head
-        uint16_t    _intervals[16];
 
                 // Private functions
 

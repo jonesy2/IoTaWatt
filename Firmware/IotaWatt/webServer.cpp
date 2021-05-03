@@ -66,25 +66,23 @@ bool authenticate(authLevel level){
 
 void handleRequest(){
   String uri = server.uri();
-  static const char P_status[] PROGMEM = "/status";    
-  if(serverOn(authAdmin, FPSTR(P_status),HTTP_GET, handleStatus)) return;
+  if(serverOn(authUser,  F("/status"),HTTP_GET, handleStatus)) return;
   if(serverOn(authAdmin, F("/vcal"),HTTP_GET, handleVcal)) return;
   if(serverOn(authAdmin, F("/command"), HTTP_GET, handleCommand)) return;
-  if(serverOn(authUser, F("/list"), HTTP_GET, printDirectory)) return;
-  if(serverOn(authAdmin, F("/config"), HTTP_GET, handleGetConfig)) return;
+  if(serverOn(authUser,  F("/list"), HTTP_GET, printDirectory)) return;
   if(serverOn(authAdmin, F("/edit"), HTTP_DELETE, handleDelete)) return;
   if(serverOn(authAdmin, F("/edit"), HTTP_PUT, handleCreate)) return;
-  if(serverOn(authUser, F("/feed/list.json"), HTTP_GET, handleGetFeedList)) return;
-  if(serverOn(authUser, F("/feed/data.json"), HTTP_GET, handleGetFeedData)) return;
+  if(serverOn(authUser,  F("/feed/list.json"), HTTP_GET, handleGetFeedList)) return;
+  if(serverOn(authUser,  F("/feed/data.json"), HTTP_GET, handleGetFeedData)) return;
   if(serverOn(authAdmin, F("/graph/create"),HTTP_POST, handleGraphCreate)) return;
   if(serverOn(authAdmin, F("/graph/update"),HTTP_POST, handleGraphCreate)) return;
   if(serverOn(authAdmin, F("/graph/delete"),HTTP_POST, handleGraphDelete)) return;
-  if(serverOn(authUser, F("/graph/getall"), HTTP_GET, handleGraphGetall)) return;
-  if(serverOn(authUser, F("/graph/getallplus"), HTTP_GET, handleGraphGetallplus)) return;
+  if(serverOn(authUser,  F("/graph/getall"), HTTP_GET, handleGraphGetall)) return;
+  if(serverOn(authUser,  F("/graph/getallplus"), HTTP_GET, handleGraphGetallplus)) return;
   if(serverOn(authAdmin, F("/auth"), HTTP_POST, handlePasswords)) return;
-  if(serverOn(authUser, F("/nullreq"), HTTP_GET, returnOK)) return;
-  if(serverOn(authUser, F("/query"), HTTP_GET, handleQuery)) return;
-  if(serverOn(authUser, F("/DSTtest"), HTTP_GET, handleDSTtest)) return;
+  if(serverOn(authUser,  F("/nullreq"), HTTP_GET, returnOK)) return;
+  if(serverOn(authUser,  F("/query"), HTTP_GET, handleQuery)) return;
+  if(serverOn(authUser,  F("/DSTtest"), HTTP_GET, handleDSTtest)) return;
   if(serverOn(authAdmin, F("/update"), HTTP_GET, handleUpdate)) return;
 
 
@@ -113,8 +111,8 @@ void returnOK() {
   server.send(200, txtPlain_P, "");
 }
 
-void returnFail(String msg) {
-  server.send(500, txtPlain_P, msg + "\r\n");
+void returnFail(String msg, int HTTPcode) {
+  server.send(HTTPcode, txtPlain_P, msg + "\r\n");
 }
 
 bool loadFromSdCard(String path){
@@ -122,7 +120,7 @@ bool loadFromSdCard(String path){
   if( ! path.startsWith("/")) path = '/' + path;
   String dataType = txtPlain_P;
   if(path.endsWith("/")) path += F("index.htm");
-  if(path == F("/edit") || path == F("/graph")){
+  if(path.equals(F("/edit")) || path.equals(F("/graph")) || path.equals(F("/graph2"))){
     path += F(".htm");
   }
   
@@ -149,14 +147,15 @@ bool loadFromSdCard(String path){
     dataFile = SD.open(path.c_str());
   }
 
- 
-
           // If reading user directory,
           // authenticate as user
           // otherwise require admin.
 
   authLevel level = authAdmin;
-  if(path.startsWith(F("/user/"))){
+  if(path.startsWith(F("/user/")) ||
+     path.startsWith(F("/graphs/")) ||
+     path.startsWith(F("/graph.")) ||
+     path.startsWith(F("/graph2."))){
     level = authUser;
   }
   if( ! authenticate(level)) return true;
@@ -201,19 +200,27 @@ bool loadFromSpiffs(String path, String dataType){
 }
 
 void handleFileUpload(){
-  trace(T_WEB,11);
-  if(server.uri() != "/edit") return;
+  trace(T_WEB, 11);
+  static File uploadFile;
   HTTPUpload& upload = server.upload();
-  if( ! upload.filename.startsWith("/")){
-    upload.filename = String('/') + upload.filename;
-  }
-  upload.filename.toLowerCase();
+  trace(T_WEB, 11, upload.status);
   if(upload.filename.startsWith(F("/esp_spiffs/"))){
     handleSpiffsUpload();
+    return;
   }
+  
   if(upload.status == UPLOAD_FILE_START){
+    if(server.uri() != "/edit") return;
+    upload.filename.toLowerCase();
+    if(upload.filename.startsWith("/")){
+      upload.filename.remove(0, 1);
+    }
     if( ! authenticate(authAdmin)) return;
-      if(upload.filename.equals(F("/config.txt"))){
+    if(upload.filename.equals(F(IOTA_CONFIG_PATH))){
+      returnFail("Protected", 403);
+      return;
+    }
+    if(upload.filename.equals(F(IOTA_CONFIG_NEW_PATH))){
       if(server.hasHeader(F("X-configSHA256"))){
         if(server.header(F("X-configSHA256")) != base64encode(configSHA256, 32)){
           server.send(409, txtPlain_P, F("Config not current"));
@@ -225,23 +232,29 @@ void handleFileUpload(){
     if(uploadFile = SD.open(upload.filename.c_str(), FILE_WRITE)){
       DBG_OUTPUT_PORT.printf_P(PSTR("Upload: START, filename: %s\r\n"), upload.filename.c_str());
     }
-
-  } else if(upload.status == UPLOAD_FILE_WRITE){
+  } 
+  
+  else if(upload.status == UPLOAD_FILE_WRITE){
     if(uploadFile) {
       uploadFile.write(upload.buf, upload.currentSize);
     }
-    
-  } else if(upload.status == UPLOAD_FILE_END){
+  } 
+  
+  else if(upload.status == UPLOAD_FILE_END){
     if(uploadFile){
+      if(upload.filename.equals(F(IOTA_CONFIG_NEW_PATH))){
+        hashFile(configSHA256, uploadFile);
+        server.sendHeader("X-configSHA256", base64encode(configSHA256, 32));
+        getNewConfig = true;
+      }
       uploadFile.close();
       DBG_OUTPUT_PORT.printf_P(PSTR("Upload: END, Size: %d\r\n"), upload.totalSize);
-      if(upload.filename.equals("/config.txt")){
-        uploadFile = SD.open(upload.filename.c_str(), FILE_READ);
-        hashFile(configSHA256, uploadFile);
-        uploadFile.close();
-        server.sendHeader("X-configSHA256", base64encode(configSHA256, 32));
-      }
     }
+  } else if(upload.status == UPLOAD_FILE_ABORTED){
+    if(uploadFile){
+      uploadFile.close();
+    }
+    log("WebServer: Upload aborted: %s", upload.filename.c_str());
   }
 }
 
@@ -249,10 +262,10 @@ void handleSpiffsUpload(){
   trace(T_WEB,11);
   HTTPUpload& upload = server.upload();
   if(upload.status == UPLOAD_FILE_START){
-
     if( ! authenticate(authAdmin)) return;
-      DBG_OUTPUT_PORT.printf_P(PSTR("Upload: START, filename: %s\r\n"), upload.filename.c_str());
-      spiffsWrite(upload.filename.substring(11).c_str(), "", 0);        // Create a null file
+    upload.filename.toLowerCase();
+    DBG_OUTPUT_PORT.printf_P(PSTR("Upload: START, filename: %s\r\n"), upload.filename.c_str());
+    spiffsWrite(upload.filename.substring(11).c_str(), "", 0);        // Create a null file
 
   } else if(upload.status == UPLOAD_FILE_WRITE){
       spiffsWrite(upload.filename.substring(11).c_str(), upload.buf, upload.currentSize, true);   // append to the file (true)
@@ -299,13 +312,13 @@ void handleDelete(){
     return;
   } 
     if(path == "/" || !SD.exists((char *)path.c_str())) {
-    returnFail("BAD PATH");
+    returnFail("BAD PATH", 400);
     return;
   }
   if(path == F("/config.txt") ||
-     path.startsWith(IotaLogFile) ||
-     path.startsWith(historyLogFile)){
-    returnFail("Restricted File");
+     path.equals(IOTA_CURRENT_LOG_PATH) ||
+     path.equals(IOTA_HISTORY_LOG_PATH)){
+    returnFail("Restricted File", 403);
     return;
   }
   deleteRecursive(path);
@@ -325,7 +338,7 @@ void handleCreate(){
   } 
 
   if(path == "/" || SD.exists((char *)path.c_str())) {
-    returnFail("BAD PATH");
+    returnFail("BAD PATH", 400);
     return;
   }
 
@@ -351,28 +364,32 @@ void printDirectory() {
   }
   else {
     if(path != "/" && !SD.exists((char *)path.c_str())) return returnFail("BAD PATH");
-    File dir = SD.open((char *)path.c_str());
-    if(!dir.isDirectory()){
-      dir.close();
-      return returnFail("NOT DIR");
-    }
+    Dir dir = SDFS.openDir(path);
     DynamicJsonBuffer jsonBuffer;
     JsonArray& array = jsonBuffer.createArray();
-    dir.rewindDirectory();
-    File entry;
-    while(entry = dir.openNextFile()){
-      JsonObject& object = jsonBuffer.createObject();
-      object["type"] = (entry.isDirectory()) ? "dir" : "file";
-      object["name"] = String(entry.name());
-      array.add(object);
-      entry.close();
-    }
-    dir.close();
     if(path == "/"){
       JsonObject& object = jsonBuffer.createObject();
       object["type"] = "dir";
       object["name"] = "esp_spiffs";
       array.add(object);
+    }
+    dir.rewind();
+    while(dir.next()){
+      if(dir.isDirectory() && !dir.fileName().equalsIgnoreCase(F("system volume information"))){
+        JsonObject& object = jsonBuffer.createObject();
+        object["type"] = "dir";
+        object["name"] = String(dir.fileName());
+        array.add(object);
+      }
+    }
+    dir.rewind();
+    while(dir.next()){
+      if(dir.isFile()){
+        JsonObject& object = jsonBuffer.createObject();
+        object["type"] = "file";
+        object["name"] = String(dir.fileName());
+        array.add(object);
+      }
     }
     array.printTo(response);
   }  
@@ -410,7 +427,6 @@ void printSpiffsDirectory(String path) {
  * Following handlers added to WebServer for IotaWatt specific requests
  * 
  **********************************************************************************************/
-
 void handlePasswords(){
   trace(T_WEB,21);
   int len = server.arg("plain").length();
@@ -489,6 +505,10 @@ void handleStatus(){
       trace(T_WEB,14);
       stats.set(F("chanrate"),cycleSampleRate);
       trace(T_WEB,14);
+      stats.set(F("starttime"), programStartTime);
+      trace(T_WEB,14);
+      stats.set(F("currenttime"), UTCtime());
+      trace(T_WEB,14);
       stats.set(F("runseconds"), UTCtime()-programStartTime);
       trace(T_WEB,14);
       stats.set(F("stack"),ESP.getFreeHeap());
@@ -554,27 +574,44 @@ void handleStatus(){
   }
 
 
-    if(server.hasArg(F("influx"))){
+    if(server.hasArg(F("influx1"))){
       trace(T_WEB,17);
-      JsonObject& influx = jsonBuffer.createObject();
-      influx.set(F("running"),influxStarted);
-      influx.set(F("lastpost"),influxLastPost);  
-      root["influx"] = influx;
+      JsonObject& status = jsonBuffer.createObject();
+      if(!influxDB_v1){
+        status.set(F("state"),"not running");
+      } else {
+        influxDB_v1->getStatusJson(status);
+      }  
+      root["influx1"] = status;
     }
 
-    if(server.hasArg(F("emon"))){
-      trace(T_WEB,22);
-      JsonObject& emon = jsonBuffer.createObject();
-      emon.set(F("running"),EmonStarted);
-      emon.set(F("lastpost"),EmonLastPost);  
-      root["emon"] = emon;
+    if(server.hasArg(F("influx2"))){
+      trace(T_WEB,17);
+      JsonObject& status = jsonBuffer.createObject();
+      if(!influxDB_v2){
+        status.set(F("state"),"not running");
+      } else {
+        influxDB_v2->getStatusJson(status);
+      }  
+      root["influx2"] = status;
     }
 
+    if(server.hasArg(F("emoncms"))){
+      trace(T_WEB,18);
+      JsonObject& status = jsonBuffer.createObject();
+      if(!Emoncms){
+        status.set(F("state"),"not running");
+      } else {
+        Emoncms->getStatusJson(status);
+      }  
+      root["emoncms"] = status;
+    }
+    
     if(server.hasArg(F("pvoutput"))){
       trace(T_WEB,23);
       JsonObject& status = jsonBuffer.createObject();
       if(!pvoutput){
-        status.set(F("state"),"stopped");
+        status.set(F("state"),"not running");
       } else {
         pvoutput->getStatusJson(status);
       }
@@ -583,22 +620,43 @@ void handleStatus(){
 
     if(server.hasArg(F("datalogs"))){
       trace(T_WEB,17);
-      JsonObject& datalogs = jsonBuffer.createObject();
+      JsonArray& datalogs = jsonBuffer.createArray();
+
       JsonObject& currlog = jsonBuffer.createObject();
-      currlog.set(F("firstkey"),currLog.firstKey());
-      currlog.set(F("lastkey"),currLog.lastKey());
-      currlog.set(F("size"),currLog.fileSize());
-      currlog.set(F("interval"),currLog.interval());
-      //currlog.set("wrap",currLog._wrap ? true : false);
-      datalogs.set(F("currlog"),currlog);
+      currlog.set(F("id"), "Current");
+      currlog.set(F("firstkey"),Current_log.firstKey());
+      currlog.set(F("lastkey"),Current_log.lastKey());
+      currlog.set(F("size"),Current_log.fileSize());
+      currlog.set(F("interval"),Current_log.interval());
+      //currlog.set("wrap",Current_log._wrap ? true : false);
+      datalogs.add(currlog);
+
       JsonObject& histlog = jsonBuffer.createObject();
-      histlog.set(F("firstkey"),histLog.firstKey());
-      histlog.set(F("lastkey"),histLog.lastKey());
-      histlog.set(F("size"),histLog.fileSize());
-      histlog.set(F("interval"),histLog.interval());
-      //histlog.set("wrap",histLog._wrap ? true : false);
-      datalogs.set(F("histlog"),histlog);
+      histlog.set(F("id"), "History");
+      histlog.set(F("firstkey"),History_log.firstKey());
+      histlog.set(F("lastkey"),History_log.lastKey());
+      histlog.set(F("size"),History_log.fileSize());
+      histlog.set(F("interval"),History_log.interval());
+      datalogs.add(histlog);
+
+      trace(T_WEB,17);
       root.set(F("datalogs"),datalogs);
+    }
+
+    if(server.hasArg(F("wifi"))){
+      trace(T_WEB,17);
+      JsonObject& wifi = jsonBuffer.createObject();
+      wifi.set(F("connecttime"),wifiConnectTime);
+      if(wifiConnectTime){
+        wifi.set(F("SSID"),WiFi.SSID());
+        String ip = WiFi.localIP().toString();
+        wifi.set(F("IP"),ip);
+        //Serial.printf("SSID: %s, IP: %s\r\n", WiFi.SSID().c_str(), ip.c_str());
+        wifi.set(F("channel"),WiFi.channel());
+        wifi.set(F("RSSI"),WiFi.RSSI());
+        wifi.set(F("mac"), WiFi.macAddress());
+      }
+      root.set(F("wifi"),wifi);
     }
 
     if(server.hasArg(F("passwords"))){
@@ -610,7 +668,7 @@ void handleStatus(){
     }
     root.printTo(response);
   }
-  server.send(200, txtJson_P, response);
+  server.send(200, appJson_P, response);
 }
 
 void handleVcal(){
@@ -674,24 +732,20 @@ void handleCommand(){
     log("deletelog=%s command received.", arg.c_str());
     if(arg == "current"){
       trace(T_WEB,21); 
-      currLog.end();
-      deleteRecursive(String(IotaLogFile) + ".log");
-      deleteRecursive(String(IotaLogFile) + ".ndx");
+      Current_log.end();
+      deleteRecursive(IOTA_CURRENT_LOG_PATH);
     } 
     else if(arg == "history"){
       trace(T_WEB,22); 
-      histLog.end();
-      deleteRecursive(String(historyLogFile) + ".log");
-      deleteRecursive(String(historyLogFile) + ".ndx");
+      History_log.end();
+      deleteRecursive(IOTA_HISTORY_LOG_PATH);
     }
     else if(arg == "both"){
       trace(T_WEB,23);
-      currLog.end();
-      deleteRecursive(String(IotaLogFile) + ".log");
-      deleteRecursive(String(IotaLogFile) + ".ndx");
-      histLog.end();
-      deleteRecursive(String(historyLogFile) + ".log");
-      deleteRecursive(String(historyLogFile) + ".ndx");
+      Current_log.end();
+      deleteRecursive(IOTA_CURRENT_LOG_PATH);
+      History_log.end();
+      deleteRecursive(IOTA_HISTORY_LOG_PATH);
     }
     else {
       server.send(400, txtPlain_P, F("Specify current, history, or both."));
@@ -802,26 +856,6 @@ void sendMsgFile(File &dataFile, int32_t relPos){
     _client.write(dataFile);
 }
 
-void handleGetConfig(){
-  trace(T_WEB,8); 
-  if(server.hasArg(F("update"))){
-    if(server.arg(F("update")) == "restart"){
-      server.send(200, F("text/plain"), "OK");
-      log("Restart command received.");
-      delay(500);
-      ESP.restart();
-    }
-    else if(server.arg(F("update")) == "reload"){
-      validConfig = getConfig("config.txt");
-      if(validConfig){
-        copyFile("/esp_spiffs/config.txt", "config.txt");
-      }
-      server.send(200, txtPlain_P, "OK");
-      return;  
-    }
-  }
-  server.send(400, txtPlain_P, "Bad Request.");
-}
 
 void handleQuery(){
   trace(T_WEB,50);
@@ -834,6 +868,7 @@ void handleQuery(){
   } else {
     trace(T_WEB,52);
     server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+    //server.sendHeader(String("Connection"), String("keep-alive"));
     if(server.hasArg(F("download"))){
       trace(T_WEB,53);
       server.send(200,"application/octet-stream","");
@@ -847,19 +882,19 @@ void handleQuery(){
       server.send(200, txtPlain_P, "");
     }
       
-    uint8_t* buf = new uint8_t[1460];
+    uint8_t* buf = new uint8_t[1440];
     int read = 0;
     size_t size = 0;
     trace(T_WEB,56);
-    while((read = query->readResult(buf+6, 1460-8)) && size < 100000){
+    while((read = query->readResult(buf, 1440))){
       trace(T_WEB,57);
-      sendChunk((char*)buf, read+6);
+      server.sendContent((char*)buf, read);
       size += read;
       trace(T_WEB,58);
       yield();
     }
     trace(T_WEB,56);
-    sendChunk((char*)buf, 6);
+    //server.sendContent((char*)buf, 0);
     delete buf;
   }
   delete query;

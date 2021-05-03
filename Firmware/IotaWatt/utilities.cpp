@@ -18,18 +18,31 @@ int strcmp_ci(const char* str1, const char* str2){
 /**************************************************************************************************
  * allocate a char* array, copy the argument data to it, and return the pointer. 
  * ************************************************************************************************/
-char* charstar(const __FlashStringHelper * str){
-  if( ! str) return nullptr;
-  char* ptr = new char[strlen_P((PGM_P)str)+1];
-  strcpy_P(ptr, (PGM_P)str);
+char* charstar(const __FlashStringHelper * str1, const char *str2){
+  int len1 = strlen_P((PGM_P)str1);
+  int len2 = str2 ? strlen(str2) : 0;
+  char* ptr = new char[len1 + len2 +1];
+  strcpy_P(ptr, (PGM_P)str1);
+  if(str2){
+      strcpy(ptr + len1, str2);
+  }  
   return ptr;
 }
 
-char* charstar(const char* str){
-  if( ! str) return nullptr;
-  char* ptr = new char[strlen(str)+1];
-  strcpy(ptr, str);
-  return ptr;
+char* charstar(const char* str1, const char *str2){
+  int len1 = str1 ? strlen(str1) : 0;
+  int len2 = str2 ? strlen(str2) : 0;
+  if(len1 + len2){
+    char* ptr = new char[len1 + len2 +1];
+    if(str1){
+        strcpy(ptr, str1);
+    }
+    if(str2){
+        strcpy(ptr + len1, str2);
+    }  
+    return ptr;
+  }
+  return nullptr;
 }
 
 char* charstar(String str){
@@ -47,11 +60,13 @@ char* charstar(const char str){
  * Hash the input string to an eight character base64 String 
  * ************************************************************************************************/
 String hashName(const char* name){
+  trace(T_utility,10);  
   SHA256 sha256;
   uint8_t hash[6];
   sha256.reset();
   sha256.update(name, strlen(name));
   sha256.finalize(hash, 6);
+  trace (T_utility,11);
   return base64encode(hash, 6);
 }
 
@@ -90,13 +105,17 @@ void   hex2bin(uint8_t* out, const char* in, size_t len){
 /**************************************************************************************************
  * Convert the contents of an xbuf to base64
  * ************************************************************************************************/
-void base64encode(xbuf* buf){
-  char* base64codes = new char[65];
+void base64encode(xbuf* buf){ 
+  trace(T_base64,10);  
+  char* base64codes = new char[72];
+  if( ! base64codes){
+      trace(T_base64,11);
+  }
   strcpy_P(base64codes, base64codes_P);
   size_t supply = buf->available();
   uint8_t in[3];
   uint8_t out[4];
-  trace(T_base64,2,supply);
+  trace(T_base64,14,supply);
   while(supply >= 3){
     buf->read(in,3);
     out[0] = (uint8_t) base64codes[in[0]>>2];
@@ -106,7 +125,7 @@ void base64encode(xbuf* buf){
     buf->write(out, 4);
     supply -= 3;
   }
-  trace(T_base64,3,supply);
+  trace(T_base64,15,supply);
   if(supply > 0){
     in[0] = in[1] = in[2] = 0;
     buf->read(in,supply);
@@ -122,21 +141,24 @@ void base64encode(xbuf* buf){
     }
     buf->write(out, 4);
   }
+  trace(T_base64,16);
   delete[] base64codes;
 }
 
 String base64encode(const uint8_t* in, size_t len){
   trace(T_base64,0,len);
   if(len <= 0){
-     trace(T_base64,2);
+     trace(T_base64,1);
      return String("");
   }
-  size_t _len = len * 2 + len;
-  xbuf work;
+  xbuf work(128);
   work.write(in, len);
+  trace(T_base64,3,len);
   base64encode(&work);
-  return work.readString(work.available());
-  trace(T_base64,1);
+  trace(T_base64,4);
+  //Serial.printf("base64 %s %d\n",work.peekString().c_str(), ESP.getFreeHeap());
+  String result = work.readString(work.available());
+  return result;
 }
 
 /**************************************************************************************************
@@ -203,6 +225,9 @@ String  JsonSummary(File file, int depth){
             }
         }
         if(level < depth) JsonOut.print(_char);
+        if(level < 0){
+            break;
+        }
     }
     return JsonOut.readString();
 }

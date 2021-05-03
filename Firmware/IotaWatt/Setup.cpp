@@ -1,4 +1,5 @@
 #include "IotaWatt.h"
+#include "splitstr.h"
 
 
 String formatHex(uint32_t data);
@@ -17,10 +18,10 @@ void setup()
   delay(250);
   //Serial.println(F("\r\n\n\n** Restart **\r\n\n"));
   //Serial.println(F("Serial Initialized"));
-  
+
   //*************************************** Start SPI *************************************************
-    
-  pinMode(pin_CS_ADC0,OUTPUT);                    // Make sure all the CS pins are HIGH
+
+  pinMode(pin_CS_ADC0, OUTPUT);                // Make sure all the CS pins are HIGH
   digitalWrite(pin_CS_ADC0,HIGH);
   pinMode(pin_CS_ADC1,OUTPUT);
   digitalWrite(pin_CS_ADC1,HIGH);
@@ -33,15 +34,16 @@ void setup()
   //*************************************** Initialize SPI *******************************************
   
   SPI.begin();
-  SPI.beginTransaction(SPISettings(2000000,MSBFIRST,SPI_MODE0));
   Serial.println("\r\nSPI started.");
    
   //*************************************** Initialize the SD card ************************************
 
-  if(!SD.begin(pin_CS_SDcard)) {
+  SDFSConfig SDconfig(pin_CS_SDcard, SD_SCK_MHZ(25));
+  SDFS.setConfig(SDconfig);
+  if(!SDFS.begin()) {
     log("SD initiatization failed. Retrying.");
     setLedCycle(LED_SD_INIT_FAILURE);
-    while(!SD.begin(pin_CS_SDcard, SPI_FULL_SPEED)){ 
+    while(!SDFS.begin()){ 
       yield();
     }
     endLedCycle();
@@ -49,7 +51,7 @@ void setup()
   }
   hasSD = true;
   log("SD initialized.");
-
+  
   //*************************************** Check RTC   *****************************
 
   Wire.begin(pin_I2C_SDA, pin_I2C_SCL);
@@ -64,7 +66,7 @@ void setup()
   byte Control_3 = Wire.read();
   
   if(rtc.initialized()){
-    timeRefNTP = rtc.now().unixtime() + SEVENTY_YEAR_SECONDS;
+    timeRefNTP = rtc.now().unixtime() + SECONDS_PER_SEVENTY_YEARS;
     timeRefMs = millis();
     RTCrunning = true;
     log("Real Time Clock is running. Unix time %d ", UTCtime());
@@ -174,7 +176,12 @@ if(spiffsBegin()){
 //************************************* Process Config file *****************************************
   deviceName = charstar(F(DEVICE_NAME));
   updateClass = charstar(F("NONE"));
-  validConfig = getConfig("config.txt");
+  validConfig = setConfig("config.txt");
+  if(! validConfig){
+    log("config file invalid, attempting recovery.");
+    validConfig = recoverConfig();
+    log("configuration recovery %ssuccessful.", validConfig ? "" : "un");
+  }
   log("Local time zone: %+d:%02d", (int)localTimeDiff/60, (int)localTimeDiff%60);
   if(timezoneRule){
     log("Using Daylight Saving Time (BST) when in effect.");
@@ -186,21 +193,25 @@ if(spiffsBegin()){
   authLoadPwds();  
 
 //*************************************** Start the WiFi  connection *****************************
-  
   WiFi.hostname(deviceName);
   WiFi.setAutoConnect(true);
+  WiFi.setAutoReconnect(true);
   WiFi.begin();
+  if(WiFi.status() != WL_CONNECTED){
+    WiFi.reconnect();
+  }
 
         // If the RTC is not running or power fail restart
         // Use the WiFi Manager.
 
-  if( ! RTCrunning || powerFailRestart){
+  if( (! RTCrunning) || powerFailRestart){
     uint32_t autoConnectTimeout = millis() + 3000UL;
     while(WiFi.status() != WL_CONNECTED){
       if(millis() > autoConnectTimeout){
         setLedCycle(LED_CONNECT_WIFI);
+        WiFiManager wifiManager;
         wifiManager.setDebugOutput(false);
-        wifiManager.setConfigPortalTimeout(180);
+        wifiManager.setConfigPortalTimeout(120);
         String ssid = "iota" + String(ESP.getChipId());
         String pwd = deviceName;
         log("Connecting with WiFiManager.");
@@ -213,22 +224,17 @@ if(spiffsBegin()){
           wifiManager.autoConnect(ssid.c_str(), pwd.c_str());
           endLedCycle();
         }
+        if(! WiFi.isConnected()){
+          log("Did not connect after power-fail. Restarting to reset WiFi.");
+          delay(500);
+          ESP.restart();
+        }
         break;
       }
       yield();
     }
   }
 
-      //*************************************** Startup the Zeroconfig responders *********************
-
-  if (MDNS.begin(deviceName)) {
-    MDNS.addService("http", "tcp", 80);
-    log("MDNS responder started for hostname %s", deviceName);
-  }
-  if (LLMNR.begin(deviceName)){
-    log("LLMNR responder started for hostname %s", deviceName);
-  } 
-  
  //*************************************** Start the web server ****************************
 
   server.on(F("/edit"), HTTP_POST, returnOK, handleFileUpload);
@@ -271,11 +277,11 @@ void setLedCycle(const char* pattern){
     ledColor[i] = pattern[i];
     if(pattern[i] == 0) break;
   }
-  ticker.attach(0.5, ledBlink);
+  Led_timer.attach(0.5, ledBlink);
 }
 
 void endLedCycle(){
-  ticker.detach();
+  Led_timer.detach();
   setLedState();
 }
 

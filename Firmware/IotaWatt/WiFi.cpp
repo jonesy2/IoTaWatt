@@ -10,29 +10,44 @@ extern struct tcp_pcb* tcp_tw_pcbs;
 extern "C" void tcp_abort(struct tcp_pcb* pcb);
 
 uint32_t WiFiService(struct serviceBlock* _serviceBlock) {
-  static uint32_t lastDisconnect = millis();          // Time of last disconnect
-  const uint32_t restartInterval = 60;              // Restart ESP if disconnected this many minutes  
+  static uint32_t lastDisconnect = UTCtime();       // Time of last disconnect
+  const uint32_t restartInterval = 60*60;           // Restart if disconnected this many seconds
+  static bool mDNSstarted = false;
+  static bool LLMNRstarted = false;
 
   trace(T_WiFi,0);
   if(WiFi.status() == WL_CONNECTED){
     trace(T_WiFi,1);
-    if(!wifiConnected){
+    if(!wifiConnectTime){
       trace(T_WiFi,1);
-      wifiConnected = true;
+      wifiConnectTime = UTCtime();
       String ip = WiFi.localIP().toString();
       log("WiFi connected. SSID=%s, IP=%s, channel=%d, RSSI %ddb", WiFi.SSID().c_str(), ip.c_str(), WiFi.channel(), WiFi.RSSI());
+    }
+    if( ! mDNSstarted){
+      if (MDNS.begin(deviceName)) {
+        MDNS.addService("http", "tcp", 80);
+        log("MDNS responder started for hostname %s", deviceName);
+        mDNSstarted = true;
+      }
+    }
+    if( ! LLMNRstarted){
+      if (LLMNR.begin(deviceName)){
+        log("LLMNR responder started for hostname %s", deviceName);
+        LLMNRstarted = true;
+      } 
     }
   }
   else {
     trace(T_WiFi,2);
-    if(wifiConnected){
+    if(wifiConnectTime){
       trace(T_WiFi,2);
-      wifiConnected = false;
-      lastDisconnect = millis();
+      wifiConnectTime = 0;
+      lastDisconnect = UTCtime();
       log("WiFi disconnected.");
     }
-    else if((millis() - lastDisconnect) >= (60000UL * restartInterval)){
-      log("WiFi disconnected more than %d minutes, restarting.", restartInterval);
+    else if((UTCtime() - lastDisconnect) >= restartInterval){
+      log("WiFi disconnected more than %d minutes, restarting.", restartInterval / 60);
       delay(500);
       ESP.restart();
     }
@@ -41,7 +56,7 @@ uint32_t WiFiService(struct serviceBlock* _serviceBlock) {
     // Check for degraded heap.
 
   trace(T_WiFi,10);
-  if(ESP.getFreeHeap() < 10000){
+  if(ESP.getFreeHeap() < 7000){
     trace(T_WiFi,10);
     log("Heap memory has degraded below safe minimum, restarting.");
     delay(500);
@@ -87,7 +102,7 @@ uint32_t WiFiService(struct serviceBlock* _serviceBlock) {
 }
 
 uint32_t HTTPreserve(uint16_t id, bool lock){
-  trace(T_WiFi,100);
+  trace(T_WiFi,100,id);
   if(HTTPrequestFree == 0 || HTTPlock) return 0;
   HTTPrequestFree--;
   for(int i=0; i<HTTPrequestMax; i++){
@@ -107,7 +122,7 @@ uint32_t HTTPreserve(uint16_t id, bool lock){
 void HTTPrelease(uint32_t HTTPtoken){
   trace(T_WiFi,110);
   for(int i=0; i<HTTPrequestMax; i++){
-    trace(T_WiFi,110,0);
+    trace(T_WiFi,110,i);
     if(HTTPrequestStart[i] == HTTPtoken){
       HTTPrequestStart[i] = 0;
       HTTPrequestFree++;

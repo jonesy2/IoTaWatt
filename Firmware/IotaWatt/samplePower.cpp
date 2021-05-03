@@ -121,6 +121,9 @@ void samplePower(int channel, int overSample){
   _watts = Vratio * Iratio * ((double)_sumVI / samples);
   _VA = _Vrms * _Irms;
 
+  _watts *= Ichannel->_vmult;
+  _VA *= Ichannel->_vmult;
+
   if(Ichannel->_double){
     _watts *= 2.0;
     _VA *= 2.0;
@@ -207,9 +210,7 @@ void samplePower(int channel, int overSample){
 
   uint32_t startMs = millis();                // Start of current half cycle
   uint32_t timeoutMs = 12;                    // Maximum time allowed per half cycle
-  uint32_t firstCrossUs;                      // Time cycle at usec resolution for phase calculation
-  uint32_t lastCrossUs;
-
+  
   int16_t midCrossSamples;                    // Sample count at mid cycle and end of cycle
   int16_t lastCrossSamples;                   // Used to determine if sampling was interrupted
 

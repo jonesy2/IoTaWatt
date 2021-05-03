@@ -147,10 +147,10 @@ uint32_t getFeedData(){ //(struct serviceBlock* _serviceBlock){
       logRecord = new IotaLogRecord;
       lastRecord = new IotaLogRecord;
      
-      if(startUnixTime >= histLog.firstKey()){   
+      if(startUnixTime >= History_log.firstKey()){   
         lastRecord->UNIXtime = startUnixTime - intervalSeconds;
       } else {
-        lastRecord->UNIXtime = histLog.firstKey();
+        lastRecord->UNIXtime = History_log.firstKey();
       }
       logReadKey(lastRecord);
       
@@ -292,4 +292,5 @@ uint32_t getFeedData(){ //(struct serviceBlock* _serviceBlock){
       return 0;                                       // Done for now, return without scheduling.
     }
   }
+  return 0;
 }
